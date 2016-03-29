@@ -1,11 +1,14 @@
 package com.guojun.a0325;
 
 import android.content.Context;
+import android.database.sqlite.SQLiteCantOpenDatabaseException;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.util.Log;
 import android.view.View;
 
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Vector;
 
@@ -14,18 +17,17 @@ import java.util.Vector;
  */
 public class BallView extends View {
 
+    private String TAG = "BallView";
     private final Random mRandom;
-    public static int SPEED_DIRECT_ONE = 1;
-    public static int SPEED_DIRECT_TWO = 2;
-    public static int SPEED_DIRECT_THREE = 3;
-    public static int SPEED_DIRECT_FOUR = 4;
-
+    public static int SPEED_DIRECT_SAME = 1;
+    public static int SPEED_DIRECT_DIFFERENT = 2;
+    public static int SPEED_DIRECT_ZERO = 0;
     static class Ball {
         int radius; // 半径
-        static float cx;   // 圆心
-        static float cy;   // 圆心
-        static double vx; // X轴速度
-        static double vy; // Y轴速度
+        float cx;   // 圆心
+        float cy;   // 圆心
+        double vx; // X轴速度
+        double vy; // Y轴速度
         Paint paint;
 
         // 移动
@@ -50,21 +52,20 @@ public class BallView extends View {
         int top() {
             return (int) (cy - radius);
         }
-
     }
 
-    private int mCount = 4;   // 小球个数
+    private int mCount = 5;   // 小球个数
     private int maxRadius;  // 小球最大半径
     private int minRadius; // 小球最小半径
     private int minSpeed = 5; // 小球最小移动速度
-    private int maxSpeed = 200; // 小球最大移动速度
+    private int maxSpeed = 100; // 小球最大移动速度
 
     private int mWidth = 200;
     private int mHeight = 200;
 
 
     public Ball[] mBalls;   // 用来保存所有小球的数组
-    public Vector mRadius = new Vector(0,1);
+   // public ArrayList<Ball> mRadius = new ArrayList<>();
 
     public BallView(Context context) {
         super(context);
@@ -82,7 +83,7 @@ public class BallView extends View {
             paint.setStyle(Paint.Style.FILL);
             paint.setAlpha(180);
             paint.setStrokeWidth(0);
-
+            Log.d(TAG,"draw ----------ball" + i);
             // 设置速度
             float speedX = (mRandom.nextInt(maxSpeed -minSpeed +1)+5)/10f;
             float speedY = (mRandom.nextInt(maxSpeed -minSpeed +1)+5)/10f;
@@ -90,7 +91,6 @@ public class BallView extends View {
             mBalls[i].vx = mRandom.nextBoolean() ? speedX : -speedX;
             mBalls[i].vy = mRandom.nextBoolean() ? speedY : -speedY;
         }
-
         // 圆心和半径测量的时候才设置
     }
 
@@ -110,7 +110,7 @@ public class BallView extends View {
             // 初始化圆心的位置， x最小为 radius， 最大为mwidth- radius
             mBalls[i].cx = mRandom.nextInt(mWidth - mBalls[i].radius) + mBalls[i].radius;
             mBalls[i].cy = mRandom.nextInt(mHeight - mBalls[i].radius) + mBalls[i].radius;
-            mRadius.addElement(mBalls[i]);
+            //mRadius.addElement(mBalls[i]);
         }
     }
 
@@ -120,20 +120,20 @@ public class BallView extends View {
         // 先画出所有圆
         for (int i = 0; i < mCount; i++) {
             Ball ball = mBalls[i];
+            Log.d(TAG,"draw Ball " + i + "   --R = " + ball.radius + "--");
             canvas.drawCircle(ball.cx, ball.cy, ball.radius, ball.paint);
         }
 
         // 球碰撞边界
         for (int i = 0; i < mCount; i++) {
             Ball ball = mBalls[i];
-            for(Object a:mRadius){
 
-            }
             collisionDetectingAndChangeSpeed(ball); // 碰撞边界的计算
           //  collisionDetectingBallToBall();
             ball.move(); // 移动
         }
 
+        collinsionBalltoBall(mBalls,mCount);
         long stopTime = System.currentTimeMillis();
         long runTime = stopTime - startTime;
         // 16毫秒执行一次
@@ -163,19 +163,14 @@ public class BallView extends View {
     }
 
     //判断球的速度矢量在第几象限
-    public int direct(Ball ball){
-        double vx = ball.vx;
-        double vy = ball.vy;
-        if( vx >= 0 && vy >= 0) {
-            return SPEED_DIRECT_ONE;
-        }else if(vx >= 0 && vy <= 0){
-            return SPEED_DIRECT_TWO;
-        }else if (vx <= 0 && vy <= 0){
-            return SPEED_DIRECT_THREE;
-        }else if (vx <= 0 && vy >= 0){
-            return SPEED_DIRECT_FOUR;
+    public int direct(double v1,double v2){
+        if( v1 * v2 > 0) {
+            return SPEED_DIRECT_SAME;
+        }else if (v1 * v2 < 0){
+            return SPEED_DIRECT_DIFFERENT;
+        }else {
+            return SPEED_DIRECT_ZERO;
         }
-        return 0;
     }
 
     /*
@@ -185,18 +180,38 @@ public class BallView extends View {
       得： v1 = [(m1-m2)v10 + 2m2v20] / (m1+m2)
            v2 = [(m2-m1)v20 + 2m1v10] / (m1+m2)
     * */
-    public void collisionDetectingBallToBall(Ball a,Ball b){
+    public void speedChangedwhencollinsion(Ball a,Ball b){
         double M1 = Math.pow(a.radius,2);
         double M2 = Math.pow(b.radius,2);
         double vx1AfterCollision,vx2AfterCollision,vy1AfterCollision,vy2AfterCollision;
         vx1AfterCollision = ((M1 - M2) * a.vx + 2 * M2 * (b.vx))/(M1 + M2);
+        vx2AfterCollision = ((M2 - M1) * b.vx + 2 * M1 * (a.vx))/(M1 + M2);
         vy1AfterCollision = ((M1 - M2) * a.vy + 2 * M2 * (b.vy))/(M1 + M2);
-        vx2AfterCollision = ((M2 - M1) * b.vx + 2 * M1 * (b.vx))/(M1 + M2);
-        vy2AfterCollision = ((M2 - M1) * b.vy + 2 * M1 * (b.vy))/(M1 + M2);
+        vy2AfterCollision = ((M2 - M1) * b.vy + 2 * M1 * (a.vy))/(M1 + M2);
         a.vx = vx1AfterCollision;
         a.vy = vy1AfterCollision;
         b.vx = vx2AfterCollision;
         b.vy = vy2AfterCollision;
+    }
+
+    public void collinsionBalltoBall(Ball[] mball,int t){
+            for (int i = t -1; i > 0 ; i--){
+                float R1 = mball[t-1].radius;
+                float R2 = mball[i-1].radius;
+                float absX = Math.abs(mball[t-1].cx - mball[i-1].cx);
+                float absY = Math.abs(mball[t-1].cy - mball[i-1].cy);
+                double Rr = Math.pow(R1 + R2,2);
+                double Dd = Math.pow(absX,2)+Math.pow(absY,2);
+                //判断两球球心距离是否小于半径之和，即是否相撞
+                if (Rr >= Dd){
+                    speedChangedwhencollinsion(mball[t-1],mball[i-1]);
+                    Log.d(TAG, Rr +"---" + Dd);
+                    Log.d(TAG,"collinsionBalltoBall -----------------" + i + "---" + (i-1));
+                }
+            }
+        if ( t > 1){
+            collinsionBalltoBall(mball,t-1);
+        }
     }
 
     public void doMath(double M1,double M2,double v1,double v2){
