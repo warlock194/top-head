@@ -24,8 +24,8 @@ public class BallView extends View {
         int radius; // 半径
         static float cx;   // 圆心
         static float cy;   // 圆心
-        static float vx; // X轴速度
-        static float vy; // Y轴速度
+        static double vx; // X轴速度
+        static double vy; // Y轴速度
         Paint paint;
 
         // 移动
@@ -64,6 +64,7 @@ public class BallView extends View {
 
 
     public Ball[] mBalls;   // 用来保存所有小球的数组
+    public Vector mRadius = new Vector(0,1);
 
     public BallView(Context context) {
         super(context);
@@ -109,17 +110,16 @@ public class BallView extends View {
             // 初始化圆心的位置， x最小为 radius， 最大为mwidth- radius
             mBalls[i].cx = mRandom.nextInt(mWidth - mBalls[i].radius) + mBalls[i].radius;
             mBalls[i].cy = mRandom.nextInt(mHeight - mBalls[i].radius) + mBalls[i].radius;
+            mRadius.addElement(mBalls[i]);
         }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         long startTime = System.currentTimeMillis();
-        Vector mRadius = new Vector(0,1);
         // 先画出所有圆
         for (int i = 0; i < mCount; i++) {
             Ball ball = mBalls[i];
-            mRadius.addElement(mBalls[i].radius);
             canvas.drawCircle(ball.cx, ball.cy, ball.radius, ball.paint);
         }
 
@@ -147,8 +147,8 @@ public class BallView extends View {
         int right = getRight();
         int bottom = getBottom();
 
-        float speedX = ball.vx;
-        float speedY = ball.vy;
+        double speedX = ball.vx;
+        double speedY = ball.vy;
 
         // 碰撞左右，X的速度取反。 speed的判断是防止重复检测碰撞，然后黏在墙上了=。=
         if(ball.left() <= left && speedX < 0) {
@@ -164,24 +164,42 @@ public class BallView extends View {
 
     //判断球的速度矢量在第几象限
     public int direct(Ball ball){
-        float vx = ball.vx;
-        float vy = ball.vy;
+        double vx = ball.vx;
+        double vy = ball.vy;
         if( vx >= 0 && vy >= 0) {
             return SPEED_DIRECT_ONE;
-        }else if(vx >= 0 && vy >= 0){
+        }else if(vx >= 0 && vy <= 0){
             return SPEED_DIRECT_TWO;
-        }else if (vx >= 0 && vy >= 0){
+        }else if (vx <= 0 && vy <= 0){
             return SPEED_DIRECT_THREE;
-        }else if (vx >= 0 && vy >= 0){
+        }else if (vx <= 0 && vy >= 0){
             return SPEED_DIRECT_FOUR;
         }
         return 0;
     }
 
+    /*
+    计算碰撞后的速度分量，用到动量守恒和动能守恒公式，为此还去翻了一边高中物理书-.-||
+    根据： m1v10+m2v20 = m1v1+m2v2
+          1/2 m1v10^2 + 1/2 m2v20^2 = 1/2 m1v1^2+ 1/2m2v2^2
+      得： v1 = [(m1-m2)v10 + 2m2v20] / (m1+m2)
+           v2 = [(m2-m1)v20 + 2m1v10] / (m1+m2)
+    * */
     public void collisionDetectingBallToBall(Ball a,Ball b){
-        if (direct(a) == direct(b)){
-
-        }
+        double M1 = Math.pow(a.radius,2);
+        double M2 = Math.pow(b.radius,2);
+        double vx1AfterCollision,vx2AfterCollision,vy1AfterCollision,vy2AfterCollision;
+        vx1AfterCollision = ((M1 - M2) * a.vx + 2 * M2 * (b.vx))/(M1 + M2);
+        vy1AfterCollision = ((M1 - M2) * a.vy + 2 * M2 * (b.vy))/(M1 + M2);
+        vx2AfterCollision = ((M2 - M1) * b.vx + 2 * M1 * (b.vx))/(M1 + M2);
+        vy2AfterCollision = ((M2 - M1) * b.vy + 2 * M1 * (b.vy))/(M1 + M2);
+        a.vx = vx1AfterCollision;
+        a.vy = vy1AfterCollision;
+        b.vx = vx2AfterCollision;
+        b.vy = vy2AfterCollision;
     }
 
+    public void doMath(double M1,double M2,double v1,double v2){
+
+    }
 }
