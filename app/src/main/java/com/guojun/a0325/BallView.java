@@ -53,12 +53,12 @@ public class BallView extends View {
             return (int) (cy - radius);
         }
     }
-
+    private boolean COLLINSION = false;
     private int mCount = 5;   // 小球个数
     private int maxRadius;  // 小球最大半径
     private int minRadius; // 小球最小半径
     private int minSpeed = 5; // 小球最小移动速度
-    private int maxSpeed = 100; // 小球最大移动速度
+    private int maxSpeed = 50; // 小球最大移动速度
 
     private int mWidth = 200;
     private int mHeight = 200;
@@ -183,15 +183,18 @@ public class BallView extends View {
     public void speedChangedwhencollinsion(Ball a,Ball b){
         double M1 = Math.pow(a.radius,2);
         double M2 = Math.pow(b.radius,2);
+        double sin = Math.abs(a.cy - b.cy)/Math.sqrt(Math.pow((a.cx - b.cx),2) + Math.pow((a.cy - b.cy),2));
+        double cos = Math.abs(a.cx - b.cx)/Math.sqrt(Math.pow((a.cx - b.cx),2) + Math.pow((a.cy - b.cy),2));
+
         double vx1AfterCollision,vx2AfterCollision,vy1AfterCollision,vy2AfterCollision;
-        vx1AfterCollision = ((M1 - M2) * a.vx + 2 * M2 * (b.vx))/(M1 + M2);
-        vx2AfterCollision = ((M2 - M1) * b.vx + 2 * M1 * (a.vx))/(M1 + M2);
-        vy1AfterCollision = ((M1 - M2) * a.vy + 2 * M2 * (b.vy))/(M1 + M2);
-        vy2AfterCollision = ((M2 - M1) * b.vy + 2 * M1 * (a.vy))/(M1 + M2);
-        a.vx = vx1AfterCollision;
-        a.vy = vy1AfterCollision;
-        b.vx = vx2AfterCollision;
-        b.vy = vy2AfterCollision;
+        vx1AfterCollision = ((M1 - M2) * a.vx * cos + 2 * M2 * (b.vx * cos))/(M1 + M2);
+        vx2AfterCollision = ((M2 - M1) * b.vx * cos + 2 * M1 * (a.vx * cos))/(M1 + M2);
+        vy1AfterCollision = ((M1 - M2) * a.vy * sin + 2 * M2 * (b.vy * sin))/(M1 + M2);
+        vy2AfterCollision = ((M2 - M1) * b.vy * sin + 2 * M1 * (a.vy * sin))/(M1 + M2);
+        a.vx = a.vx - a.vx * cos + vx1AfterCollision ;
+        a.vy = a.vy - a.vy * sin + vy1AfterCollision ;
+        b.vx = b.vx - b.vx * cos + vx2AfterCollision ;
+        b.vy = b.vy - b.vy * sin + vy2AfterCollision ;
     }
 
     public void collinsionBalltoBall(Ball[] mball,int t){
@@ -204,6 +207,7 @@ public class BallView extends View {
                 double Dd = Math.pow(absX,2)+Math.pow(absY,2);
                 //判断两球球心距离是否小于半径之和，即是否相撞
                 if (Rr >= Dd){
+                    COLLINSION = true;
                     speedChangedwhencollinsion(mball[t-1],mball[i-1]);
                     Log.d(TAG, Rr +"---" + Dd);
                     Log.d(TAG,"collinsionBalltoBall -----------------" + i + "---" + (i-1));
