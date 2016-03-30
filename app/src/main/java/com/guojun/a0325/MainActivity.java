@@ -31,13 +31,10 @@
 
 package com.guojun.a0325;
 
+import android.app.Activity;
 import android.content.Context;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
@@ -45,11 +42,10 @@ import android.widget.FrameLayout;
 import com.guojun.a0325.utils.UiUtil;
 
 import java.util.ArrayList;
-import java.util.jar.Attributes;
 
 import static com.guojun.a0325.utils.UiUtil.initialize;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
     private String TAG = "MainActivity";
     private ArrayList<Square> mSquareList ;
     private Square mSquare;
