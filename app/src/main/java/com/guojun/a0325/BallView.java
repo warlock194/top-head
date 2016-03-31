@@ -1,16 +1,13 @@
 package com.guojun.a0325;
 
 import android.content.Context;
-import android.database.sqlite.SQLiteCantOpenDatabaseException;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.Log;
 import android.view.View;
 
-import java.util.ArrayList;
 import java.util.Random;
-import java.util.Vector;
 
 /**
  * Created by topwise on 16-3-28.
@@ -54,14 +51,14 @@ public class BallView extends View {
         }
     }
     private boolean COLLINSION = false;
-    private int mCount = 5;   // 小球个数
+    private int mCount = 10;   // 小球个数
     private int maxRadius;  // 小球最大半径
     private int minRadius; // 小球最小半径
     private int minSpeed = 5; // 小球最小移动速度
     private int maxSpeed = 50; // 小球最大移动速度
-
     private int mWidth = 200;
     private int mHeight = 200;
+    private boolean FLAG = true;
 
 
     public Ball[] mBalls;   // 用来保存所有小球的数组
@@ -106,11 +103,28 @@ public class BallView extends View {
         // 初始化圆的半径和圆心
         for (int i=0; i<mBalls.length; i++) {
             mBalls[i].radius = mRandom.nextInt(maxRadius+1 - minRadius) +minRadius;
-//            mBalls[i].mass = (int) (Math.PI * mBalls[i].radius * mBalls[i].radius);
-            // 初始化圆心的位置， x最小为 radius， 最大为mwidth- radius
             mBalls[i].cx = mRandom.nextInt(mWidth - mBalls[i].radius) + mBalls[i].radius;
             mBalls[i].cy = mRandom.nextInt(mHeight - mBalls[i].radius) + mBalls[i].radius;
-            //mRadius.addElement(mBalls[i]);
+      //      /*
+            if ( i > 0 ) {
+                FLAG = true;
+                judge:while (FLAG){
+                   // Log.d(TAG,"collinisioned with -- " + i);
+                    //判断是否会跟先画出的圆有重合，有的话就重画一边
+                    for (int j=0;j<i;j++ ){
+                        if (collinsion(mBalls[i],mBalls[j])){
+                            FLAG = true;
+                            Log.d(TAG,"collinisioned with -- " + i);
+                            mBalls[i].radius = mRandom.nextInt(maxRadius+1 - minRadius) +minRadius;
+                            mBalls[i].cx = mRandom.nextInt(mWidth - mBalls[i].radius) + mBalls[i].radius;
+                            mBalls[i].cy = mRandom.nextInt(mHeight - mBalls[i].radius) + mBalls[i].radius;
+                            continue judge;
+                        }
+                    }
+                    FLAG = false;
+                }
+            }
+        //    */
         }
     }
 
@@ -129,7 +143,7 @@ public class BallView extends View {
             Ball ball = mBalls[i];
 
             collisionDetectingAndChangeSpeed(ball); // 碰撞边界的计算
-          //  collisionDetectingBallToBall();
+            //collisionDetectingBallToBall();
             ball.move(); // 移动
         }
 
@@ -198,24 +212,31 @@ public class BallView extends View {
     }
 
     public void collinsionBalltoBall(Ball[] mball,int t){
-            for (int i = t -1; i > 0 ; i--){
-                float R1 = mball[t-1].radius;
-                float R2 = mball[i-1].radius;
-                float absX = Math.abs(mball[t-1].cx - mball[i-1].cx);
-                float absY = Math.abs(mball[t-1].cy - mball[i-1].cy);
-                double Rr = Math.pow(R1 + R2,2);
-                double Dd = Math.pow(absX,2)+Math.pow(absY,2);
+        for (int i = 0; i < t-1 ; i++){
                 //判断两球球心距离是否小于半径之和，即是否相撞
-                if (Rr >= Dd){
-                    COLLINSION = true;
-                    speedChangedwhencollinsion(mball[t-1],mball[i-1]);
-                    Log.d(TAG, Rr +"---" + Dd);
-                    Log.d(TAG,"collinsionBalltoBall -----------------" + i + "---" + (i-1));
+            if (collinsion(mball[t-1],mball[i])){
+                COLLINSION = true;
+                speedChangedwhencollinsion(mball[t-1],mball[i]);
+                // Log.d(TAG, Rr +"---" + Dd);
+                Log.d(TAG,"collinsionBalltoBall -----------------" + (t-1) + "---" + i);
                 }
             }
-        if ( t > 1){
+        if ( t > 2){
             collinsionBalltoBall(mball,t-1);
         }
+    }
+
+    public boolean collinsion(Ball ball_1, Ball ball_2){
+        float R1 = ball_1.radius;
+        float R2 = ball_2.radius;
+        float absX = Math.abs(ball_1.cx - ball_2.cx);
+        float absY = Math.abs(ball_1.cy - ball_2.cy);
+        double Rr = Math.pow(R1 + R2,2);
+        double Dd = Math.pow(absX,2)+Math.pow(absY,2);
+        if (Rr >= Dd){
+            return true;
+        }
+        return false;
     }
 
     public void doMath(double M1,double M2,double v1,double v2){
