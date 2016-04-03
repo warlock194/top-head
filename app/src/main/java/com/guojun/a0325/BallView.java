@@ -218,7 +218,8 @@ public class BallView extends View {
                 //判断两球球心距离是否小于半径之和，即是否相撞
             if (collinsion(mball[t-1],mball[i])){
                 COLLINSION = true;
-                speedChangedwhencollinsion(mball[t-1],mball[i]);
+                speedChanged(mball[t-1],mball[i]);
+                //speedChangedwhencollinsion(mball[t-1],mball[i]);
                 // Log.d(TAG, Rr +"---" + Dd);
                 Log.d(TAG,"collinsionBalltoBall -----------------" + (t-1) + "---" + i);
                 }
@@ -273,7 +274,15 @@ public class BallView extends View {
         double Vy_2 = Vy2*(Py2-Py1)*(Px2-Px1) - (Vx2*Math.pow(Py2-Py1,2))/Math.pow(Px2-Px1,2) - Math.pow(Py2-Py1,2);
 
 
-        double Vx_1_after = ((M1-M2)*Vx_1 + 2*M2);
+        double Vx_1_after = ((M1-M2)*Vx_1 + 2*M2*Vx_2)/(M1+M2);
+        double Vx_2_after = ((M2-M1)*Vx_2 + 2*M1*Vx_1)/(M1+M2);
+        double Vy_1_after = ((M1-M2)*Vy_1 + 2*M2*Vy_2)/(M1+M2);
+        double Vy_2_after = ((M2-M1)*Vy_2 + 2*M1*Vy_1)/(M1+M2);
+
+        a.vx = a.vx - Vx_1 + Vx_1_after;
+        a.vy = a.vy - Vy_1 + Vy_1_after;
+        b.vx = b.vx - Vx_2 + Vx_2_after;
+        b.vy = b.vy - Vy_2 + Vy_2_after;
     }
 
     public boolean collinsion(Ball ball_1, Ball ball_2){
