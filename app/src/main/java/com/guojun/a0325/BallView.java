@@ -51,7 +51,7 @@ public class BallView extends View {
         }
     }
     private boolean COLLINSION = false;
-    private int mCount = 10;   // 小球个数
+    private int mCount = 3;   // 小球个数
     private int maxRadius;  // 小球最大半径
     private int minRadius; // 小球最小半径
     private int minSpeed = 5; // 小球最小移动速度
@@ -110,7 +110,7 @@ public class BallView extends View {
                 FLAG = true;
                 judge:while (FLAG){
                    // Log.d(TAG,"collinisioned with -- " + i);
-                    //判断是否会跟先画出的圆有重合，有的话就重画一边
+                    //判断是否会跟先画出的圆有重合，有的话就重画一边，直到与之前画的所有圆都不重合为止
                     for (int j=0;j<i;j++ ){
                         if (collinsion(mBalls[i],mBalls[j])){
                             FLAG = true;
@@ -194,6 +194,8 @@ public class BallView extends View {
       得： v1 = [(m1-m2)v10 + 2m2v20] / (m1+m2)
            v2 = [(m2-m1)v20 + 2m1v10] / (m1+m2)
     * */
+
+    //非对心碰撞后的速度变化，写起来才发现比想象中稍微复杂了些
     public void speedChangedwhencollinsion(Ball a,Ball b){
         double M1 = Math.pow(a.radius,2);
         double M2 = Math.pow(b.radius,2);
@@ -224,6 +226,54 @@ public class BallView extends View {
         if ( t > 2){
             collinsionBalltoBall(mball,t-1);
         }
+        int Energy = 0;
+        for (int j = 0;j < mCount ; j++){
+            Energy +=Math.pow(mball[j].radius,2) * (Math.pow(mball[j].vx,2) + Math.pow(mball[j].vy,2));
+        }
+        Log.d(TAG,"energy = " + Energy);
+    }
+
+    public void speedChanged(Ball a,Ball b){
+        double Vx1 = a.vx;
+        double Vy1 = a.vy;
+        double Px1 = a.cx;
+        double Py1 = a.cy;
+        double Vx2 = b.vx;
+        double Vy2 = b.vy;
+        double Px2 = b.cx;
+        double Py2 = b.cy;
+        double M1 = Math.pow(a.radius,2);
+        double M2 = Math.pow(b.radius,2);
+        /*
+        //圆心连线的角度正余弦值
+        double cos = Math.abs(Px1 - Px2)/(Math.sqrt(Math.pow(Px1-Px2,2) + Math.pow(Py1-Py2,2)));
+        double sin = Math.abs(Py1 - Py2)/(Math.sqrt(Math.pow(Px1-Px2,2) + Math.pow(Py1-Py2,2)));
+
+        //球a速度方向上的正余弦值
+        double cos1 = Vx1/Math.sqrt(Math.pow(Vx1,2)+Math.pow(Vy1,2));
+        double sin1 = Vy1/Math.sqrt(Math.pow(Vx1,2)+Math.pow(Vy1,2));
+        //球b速度方向上的正余弦值
+        double cos2 = Vx2/Math.sqrt(Math.pow(Vx2,2)+Math.pow(Vy2,2));
+        double sin2 = Vy2/Math.sqrt(Math.pow(Vx2,2)+Math.pow(Vy2,2));
+        */
+        //根据向量来解出圆心连线方向上的速度分量沿x，y轴的分量。。。
+        //有点绕口。。。就是将小球分解成沿圆心连线方向和垂直圆心连线方向两个分量，再将沿着
+        //连线方向的分量分解为沿着x，y轴的两个分量a和b，然后对其进行对心碰撞的速度转换
+        /*
+        公式如下：
+        Vx_=(Vx1*(Px2-Px1)^2 - Vy1*(Py2-Py1)*(Px2-Px1))/((Px2-Px1)^2 - (Py2-Py1)^2)
+        Vy_=(Vx1*(Py2-Py1)*(Px2-Px1) - Vy1*(Py2-Py1)^2)/((Px2-Px1)^2 - (Py2-Py1)^2)
+
+           v1 = [(m1-m2)v10 + 2m2v20] / (m1+m2)
+           v2 = [(m2-m1)v20 + 2m1v10] / (m1+m2)
+        */
+        double Vx_1 = (Vx1*Math.pow(Px2-Px1,2) - Vy1*(Py2-Py1)*(Px2-Px1))/Math.pow(Px2-Px1,2) - Math.pow(Py2-Py1,2);
+        double Vy_1 = Vy1*(Py2-Py1)*(Px2-Px1) - (Vx1*Math.pow(Py2-Py1,2))/Math.pow(Px2-Px1,2) - Math.pow(Py2-Py1,2);
+        double Vx_2 = (Vx2*Math.pow(Px2-Px1,2) - Vy2*(Py2-Py1)*(Px2-Px1))/Math.pow(Px2-Px1,2) - Math.pow(Py2-Py1,2);
+        double Vy_2 = Vy2*(Py2-Py1)*(Px2-Px1) - (Vx2*Math.pow(Py2-Py1,2))/Math.pow(Px2-Px1,2) - Math.pow(Py2-Py1,2);
+
+
+        double Vx_1_after = ((M1-M2)*Vx_1 + 2*M2);
     }
 
     public boolean collinsion(Ball ball_1, Ball ball_2){
